@@ -4,7 +4,7 @@ import { createProfile, deleteProfile, getAllProfiles, getProfileByUserId, updat
 import { InsertProfile } from "@/db/schema/profiles-schema";
 import { ActionState } from "@/types";
 import { revalidatePath } from "next/cache";
-
+import { useAuth } from "@clerk/nextjs";
 export async function createProfileAction(data: InsertProfile): Promise<ActionState> {
   try {
     const newProfile = await createProfile(data);
@@ -13,6 +13,17 @@ export async function createProfileAction(data: InsertProfile): Promise<ActionSt
   } catch (error) {
     return { status: "error", message: "Failed to create profile" };
   }
+}
+
+export async function signInAction(): Promise<ActionState> {
+  const { userId } = useAuth();
+  if (userId) {
+    const profile = await getProfileByUserId(userId);
+    if (!profile) {
+      await createProfileAction({ userId });
+    }
+  }
+  return { data: userId, status: "success", message: "Profile logged in successfully" };
 }
 
 export async function getProfileByUserIdAction(userId: string): Promise<ActionState> {
